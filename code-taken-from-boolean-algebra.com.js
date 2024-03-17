@@ -48,16 +48,16 @@ function getLogicGateDiagram(tree) {
   ctx.translate(canvas.width - 100, canvas.height / 2),
     (ctx.font = "30px Arial"),
     positionNodes((tree = mapNodes(tree)), 0, 0),
-    moveNodesCloser(tree),
-    moveNodesCloser(tree),
-    moveNodesCloser(tree),
-    moveNodesCloser(tree),
-    moveNodesCloser(tree),
-    centerNodes(tree),
-    centerNodes(tree),
-    centerNodes(tree),
-    centerNodes(tree),
-    centerNodes(tree),
+    // moveNodesCloser(tree),
+    // moveNodesCloser(tree),
+    // moveNodesCloser(tree),
+    // moveNodesCloser(tree),
+    // moveNodesCloser(tree),
+    // centerNodes(tree),
+    // centerNodes(tree),
+    // centerNodes(tree),
+    // centerNodes(tree),
+    // centerNodes(tree),
     drawLogicGates(tree, ctx);
   tree = contextBoundingBox(tree);
   return cropCanvas(
@@ -93,57 +93,157 @@ function contextBoundingBox(node, e) {
     e
   );
 }
-function positionNodes(t, e, n) {
-  var i, u;
-  t.leftInput && t.rightInput
-    ? ((i = getSizeOfNodes(t.leftInput) * ySize),
-      (u = getSizeOfNodes(t.rightInput) * ySize),
-      ("OR" != t.circutType && "AND" != t.circutType) ||
-        ((t.x = -e * depthSize), (t.y = n)),
-      positionNodes(t.leftInput, e + 1, n - i),
-      positionNodes(t.rightInput, e + 1, n + u))
-    : t.input
-    ? (getSizeOfNodes(t.input),
-      ("NOT" != t.circutType && "OUTPUT" != t.circutType) ||
-        ((t.x = -e * depthSize), (t.y = n)),
-      positionNodes(t.input, e + 1, n))
-    : "INPUT" == t.circutType && ((t.x = -e * depthSize), (t.y = n));
+function positionNodes(node, depthIndex, positionY) {
+    var leftSize, rightSize;
+
+    if (node.leftInput && node.rightInput) {
+        leftSize = getSizeOfNodes(node.leftInput) * ySize;
+        rightSize = getSizeOfNodes(node.rightInput) * ySize;
+
+        if (node.circutType !== "OR" && node.circutType !== "AND") {
+            node.x = -depthIndex * depthSize;
+            node.y = positionY;
+        }
+
+        positionNodes(node.leftInput, depthIndex + 1, positionY - leftSize);
+        positionNodes(node.rightInput, depthIndex + 1, positionY + rightSize);
+    } else if (node.input) {
+        getSizeOfNodes(node.input);
+
+        if (node.circutType !== "NOT" && node.circutType !== "OUTPUT") {
+            node.x = -depthIndex * depthSize;
+            node.y = positionY;
+        }
+
+        positionNodes(node.input, depthIndex + 1, positionY);
+    } else if (node.circutType === "INPUT") {
+        node.x = -depthIndex * depthSize;
+        node.y = positionY;
+    }
 }
+
 function drawLogicGates(node, ctx) {
-  ctx.save(),
-    "AND" == node.circutType && (ctx.translate(node.x, node.y), ctx.fill(andPath)),
-    "OR" == node.circutType && (ctx.translate(node.x, node.y), ctx.fill(orPath)),
-    "NOT" == node.circutType && (ctx.translate(node.x, node.y), ctx.fill(notPath)),
-    "INPUT" == node.circutType &&
-      (ctx.fillText(node.inputVaraible, node.x + 40, node.y + 35),
-      ctx.beginPath(),
-      ctx.arc(node.x + 50, node.y + 25, 20, 0, 2 * Math.PI),
-      (ctx.lineWidth = 3),
-      ctx.stroke()),
-    "OUTPUT" == node.circutType &&
-      (ctx.translate(node.x + 69, node.y + 26),
-      ctx.scale(0.015, 0.015),
-      ctx.rotate((180 * Math.PI) / 180),
-      ctx.fill(outputPath)),
-    ctx.restore(),
-    node.leftInput &&
-      (drawLogicGates(node.leftInput, ctx),
-      drawBetweenNodes(node.leftInput, node, "leftInput", ctx)),
-    node.rightInput &&
-      (drawLogicGates(node.rightInput, ctx),
-      drawBetweenNodes(node.rightInput, node, "rightInput", ctx)),
-    node.input &&
-      (drawLogicGates(node.input, ctx), drawBetweenNodes(node.input, node, "input", ctx));
+    ctx.save();
+  
+    switch (node.circutType) {
+      case "AND":
+        ctx.translate(node.x, node.y);
+        ctx.fill(andPath);
+        break;
+  
+      case "OR":
+        ctx.translate(node.x, node.y);
+        ctx.fill(orPath);
+        break;
+  
+      case "NOT":
+        ctx.translate(node.x, node.y);
+        ctx.fill(notPath);
+        break;
+  
+      case "INPUT":
+        /////
+        x = -500  
+        y = node.inputVaraible == 'A' ? 100 : node.inputVaraible == 'B' ? 200 : node.inputVaraible == 'C' ? 300 : -1500;
+        ctx.fillText(node.inputVaraible, x + 40, y + 35);
+        ctx.beginPath();
+        ctx.arc(x + 50, y + 25, 20, 0, 2 * Math.PI);
+        ctx.lineWidth = 3;
+        ctx.stroke();
+        /////
+        
+        // ctx.fillText(node.inputVaraible, node.x + 40, node.y + 35);
+        // ctx.beginPath();
+        // ctx.arc(node.x + 50, node.y + 25, 20, 0, 2 * Math.PI);
+        // ctx.lineWidth = 3;
+        // ctx.stroke();
+        break;
+  
+      case "OUTPUT":
+        ctx.translate(node.x + 69, node.y + 26);
+        ctx.scale(0.015, 0.015);
+        ctx.rotate((180 * Math.PI) / 180);
+        ctx.fill(outputPath);
+        break;
+    }
+  
+    ctx.restore();
+  
+    if (node.leftInput) {
+      drawLogicGates(node.leftInput, ctx);
+      if (node.leftInput.circutType !== 'INPUT') {
+          drawBetweenNodes(node.leftInput, node, "leftInput", ctx);
+        } else {
+              drawBetweenNodes({x: -500, y: getSuitableY(node.leftInput) , circutType: 'INPUT'}, node, "leftInput", ctx, getSuitableDistanceFromInput(node.leftInput));
+      }
+    }
+  
+    if (node.rightInput) {
+      drawLogicGates(node.rightInput, ctx);
+      if (node.rightInput.circutType !== 'INPUT') {
+          drawBetweenNodes(node.rightInput, node, "rightInput", ctx);
+      } else {
+        drawBetweenNodes({x: -500, y: getSuitableY(node.rightInput) , circutType: 'INPUT'}, node, "rightInput", ctx, getSuitableDistanceFromInput(node.rightInput));
+      }
+    }
+  
+    if (node.input) {
+      drawLogicGates(node.input, ctx);
+      if (node.input.circutType !== 'INPUT') {
+          drawBetweenNodes(node.input, node, "input", ctx);
+      } else {
+        drawBetweenNodes({x: -500, y: getSuitableY(node.input) , circutType: 'INPUT'}, node, "input", ctx, getSuitableDistanceFromInput(node.input));
+      }
+    }
 }
-function drawLine(t, e, n, i, u) {
-  var r = Math.abs(t - n);
-  u.beginPath(),
-    u.moveTo(t, e),
-    u.lineTo(t + r / 2, e),
-    u.lineTo(t + r / 2, i),
-    u.lineTo(n, i),
-    (u.lineWidth = 3),
-    u.stroke();
+
+function getSuitableY(node) {
+    switch (node.inputVaraible) {
+        case 'A':
+            return 100;
+        case 'B':
+            return 200;
+        case 'C':
+            return 300;
+        default:
+            // Handle the unexpected case or return a default value
+            console.error('Unknown inputVariable:', node.inputVariable);
+            return null; // or throw new Error('Unknown inputVariable');
+    }
+}
+
+function getSuitableDistanceFromInput(node) {
+    switch (node.inputVaraible) {
+        case 'A':
+            return 10;
+        case 'B':
+            return 20;
+        case 'C':
+            return 30;
+        default:
+            // Handle the unexpected case or return a default value
+            console.error('Unknown inputVariable:', node.inputVariable);
+            return null; // or throw new Error('Unknown inputVariable');
+    }
+}
+
+  
+function drawLine(x1, y1, x2, y2, ctx, firstAbsoluteXDistance) {
+    if (firstAbsoluteXDistance) {
+        var firstXDistance = firstAbsoluteXDistance
+    } else {
+        var xDist = Math.abs(x1 - x2);
+        firstXDistance = xDist / 2
+    }
+  
+    ctx.beginPath();
+    ctx.moveTo(x1, y1);
+    ctx.lineTo(x1 + firstXDistance, y1);
+    ctx.lineTo(x1 + firstXDistance, y2);
+    ctx.lineTo(x2, y2);
+    
+    ctx.lineWidth = 3;
+    ctx.stroke();
 }
 function getMinAndMax(t) {
   for (var e = t; e.leftInput || e.input; )
@@ -178,7 +278,7 @@ function centerNodes(node) {
       centerNodes(node.rightInput))
     : node.input && ((node.y = node.input.y), centerNodes(node.input));
 }
-function drawBetweenNodes(n1, n2, inputDir, thickness) {
+function drawBetweenNodes(n1, n2, inputDir, ctx, firstAbsoluteXDistance) {
     const x1 = n1.x + 70;
     const y1 = n1.y + 25;
     let x2 = n2.x + 30;
@@ -200,7 +300,7 @@ function drawBetweenNodes(n1, n2, inputDir, thickness) {
     if ((n1.circutType == "INPUT" && n2.circutType == "NOT") ||
         (n1.circutType == "AND" && n2.circutType == "NOT") ||
         (n1.circutType == "OR" && n2.circutType == "NOT")) {
-        drawLine(x1, y1, x2, n2.y + 25, thickness);
+        drawLine(x1, y1, x2, n2.y + 25, ctx, firstAbsoluteXDistance);
     } else if (n1.circutType == "INPUT" && n2.circutType == "AND" ||
                n1.circutType == "NOT" && n2.circutType == "AND" ||
                n1.circutType == "AND" && n2.circutType == "AND" ||
@@ -209,7 +309,7 @@ function drawBetweenNodes(n1, n2, inputDir, thickness) {
                n1.circutType == "NOT" && n2.circutType == "OR" ||
                n1.circutType == "OR" && n2.circutType == "OR" ||
                n1.circutType == "OR" && n2.circutType == "AND") {
-        drawLine(x1, y1, x2, y2, thickness);
+        drawLine(x1, y1, x2, y2, ctx, firstAbsoluteXDistance);
     }
 }
   

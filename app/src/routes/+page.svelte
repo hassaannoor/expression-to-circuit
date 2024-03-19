@@ -68,8 +68,8 @@
         </label>
       </div>
 
-      <div class="flex w-40 mt-4">
-        <DownloadBtn on:click={handleDownloadBtn} />
+      <div class="flex w-40 mt-4" on:click={handleDownloadBtn}>
+        <DownloadBtn />
       </div>
     </div>
 

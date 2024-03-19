@@ -1,18 +1,18 @@
-function mapNodes(t) {
-  var e = null,
-    n = new Map();
+function mapNodes(nodes) {
+  var output = null,
+    m = new Map();
   return (
-    t.forEach(function (t) {
-      n.set(t.guid, t);
+    nodes.forEach(function (node) {
+      m.set(node.guid, node);
     }),
-    t.forEach(function (t) {
-      t.input && (t.input = n.get(t.input.guid)),
-        t.leftInput && (t.leftInput = n.get(t.leftInput.guid)),
-        t.rightInput && (t.rightInput = n.get(t.rightInput.guid)),
-        t.output && (t.output = n.get(t.output.guid)),
-        "OUTPUT" == t.circutType && (e = t);
+    nodes.forEach(function (node) {
+      node.input && (node.input = m.get(node.input.guid));
+      node.leftInput && (node.leftInput = m.get(node.leftInput.guid));
+      node.rightInput && (node.rightInput = m.get(node.rightInput.guid));
+      node.output && (node.output = m.get(node.output.guid));
+      "OUTPUT" == node.circutType && (output = node);
     }),
-    e
+    output
   );
 }
 function getSizeOfNodes(t) {
@@ -96,33 +96,22 @@ function contextBoundingBox(node, e) {
     e
   );
 }
-function positionNodes(node, depthIndex, positionY) {
-    var leftSize, rightSize;
 
-    if (node.leftInput && node.rightInput) {
-        leftSize = getSizeOfNodes(node.leftInput) * ySize;
-        rightSize = getSizeOfNodes(node.rightInput) * ySize;
-
-        if (node.circutType !== "OR" && node.circutType !== "AND") {
-            node.x = -depthIndex * depthSize;
-            node.y = positionY;
-        }
-
-        positionNodes(node.leftInput, depthIndex + 1, positionY - leftSize);
-        positionNodes(node.rightInput, depthIndex + 1, positionY + rightSize);
-    } else if (node.input) {
-        getSizeOfNodes(node.input);
-
-        if (node.circutType !== "NOT" && node.circutType !== "OUTPUT") {
-            node.x = -depthIndex * depthSize;
-            node.y = positionY;
-        }
-
-        positionNodes(node.input, depthIndex + 1, positionY);
-    } else if (node.circutType === "INPUT") {
-        node.x = -depthIndex * depthSize;
-        node.y = positionY;
-    }
+function positionNodes(t, e, n) {
+    var i, u;
+    t.leftInput && t.rightInput
+      ? ((i = getSizeOfNodes(t.leftInput) * ySize),
+        (u = getSizeOfNodes(t.rightInput) * ySize),
+        ("OR" != t.circutType && "AND" != t.circutType) ||
+          ((t.x = -e * depthSize), (t.y = n)),
+        positionNodes(t.leftInput, e + 1, n - i),
+        positionNodes(t.rightInput, e + 1, n + u))
+      : t.input
+      ? (getSizeOfNodes(t.input),
+        ("NOT" != t.circutType && "OUTPUT" != t.circutType) ||
+          ((t.x = -e * depthSize), (t.y = n)),
+        positionNodes(t.input, e + 1, n))
+      : "INPUT" == t.circutType && ((t.x = -e * depthSize), (t.y = n));
 }
 
 function drawLogicGates(node, ctx) {
@@ -152,7 +141,7 @@ function drawLogicGates(node, ctx) {
       case "INPUT":
         /////
         x = -500  
-        y = node.inputVaraible == 'A' ? 100 : node.inputVaraible == 'B' ? 200 : node.inputVaraible == 'C' ? 300 : -1500;
+        y = node.inputVaraible == 'A' ? 100 : node.inputVaraible == 'B' ? 200 : node.inputVaraible == 'C' ? 300 : node.inputVaraible == 'C' ? 400 : -1500;
         ctx.fillText(node.inputVaraible, x + 40, y + 35);
         ctx.beginPath();
         ctx.arc(x + 50, y + 25, 20, 0, 2 * Math.PI);
@@ -213,9 +202,11 @@ function getSuitableY(node) {
             return 200;
         case 'C':
             return 300;
+        case 'D':
+            return 400;
         default:
             // Handle the unexpected case or return a default value
-            console.error('Unknown inputVariable:', node.inputVariable);
+            console.error('Unknown inputVaraible:', node.inputVaraible);
             return null; // or throw new Error('Unknown inputVariable');
     }
 }
@@ -228,6 +219,8 @@ function getSuitableDistanceFromInput(node) {
             return 20;
         case 'C':
             return 30;
+        case 'D':
+            return 40;
         default:
             // Handle the unexpected case or return a default value
             console.error('Unknown inputVariable:', node.inputVariable);
@@ -323,7 +316,10 @@ function drawBetweenNodes(n1, n2, inputDir, ctx, firstAbsoluteXDistance) {
 }
   
 function initCanvasDraw() {
-  var t = document.getElementById("loaderCanvas"),
+    var t = document.createElement('canvas')
+    t.id = 'loaderCanvas'
+    document.body.append(t);
+//   var t = document.getElementById("loaderCanvas"),
     e = t.getContext("2d");
   (t.width = 500), (t.height = 500);
   var n = Date.now();
